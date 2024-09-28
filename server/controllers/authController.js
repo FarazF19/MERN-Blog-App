@@ -1,5 +1,6 @@
 const User = require("../models/user.model");
 const bcrypt = require("bcryptjs")
+const jwt = require("jsonwebtoken");
 
 const signup = async (req, res) => {
     const { username, email, password } = req.body;
@@ -26,8 +27,44 @@ const signup = async (req, res) => {
     }
 }
 
+const signin = async (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({
+            message: "All fields are required"
+        });
+    }
+
+    try {
+        const validUser = await User.findOne({ email });
+        if (!validUser) {
+            return res.status(404).json({
+                message: "User does not exist"
+            });
+        }
+
+        const validPassword = bcrypt.compareSync(password, validUser.password);
+        if (!validPassword) {
+            return res.status(400).json({
+                message: "Invalid Credentials!"
+            });
+        }
+        const token = jwt.sign(
+            { id: validUser._id }, process.env.JWT_SECRET,
+        );
+
+        const { password: pass, ...rest } = validUser._doc;
+
+        res.status(200).cookie('access_token', token, { httpOnly: true }).json(rest)
+
+    } catch (error) {
+        return res.status(400).json({ message: error.message })
+    }
+}
 
 
 module.exports = {
-    signup
+    signup,
+    signin,
 }
