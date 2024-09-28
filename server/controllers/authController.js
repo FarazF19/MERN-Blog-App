@@ -32,7 +32,8 @@ const signin = async (req, res) => {
 
     if (!email || !password) {
         return res.status(400).json({
-            message: "All fields are required"
+            message: "All fields are required",
+            success: false
         });
     }
 
@@ -40,14 +41,17 @@ const signin = async (req, res) => {
         const validUser = await User.findOne({ email });
         if (!validUser) {
             return res.status(404).json({
-                message: "User does not exist"
+                message: "User does not exist",
+                success: false,
+
             });
         }
 
         const validPassword = bcrypt.compareSync(password, validUser.password);
         if (!validPassword) {
             return res.status(400).json({
-                message: "Invalid Credentials!"
+                message: "Invalid Credentials!",
+                success: false,
             });
         }
         const token = jwt.sign(
